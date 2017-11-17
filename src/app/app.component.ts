@@ -17,23 +17,35 @@ export class AppComponent implements OnInit, AfterViewInit {
   @ViewChild('rendererContainer') rendererContainer: ElementRef;
 
   renderer = new THREE.WebGLRenderer();
-  scene = null;
   camera = null;
-  mesh = null;
+  scene = null;
 
   ngOnInit() {
     // RENDERER
     this.scene = new THREE.Scene();
 
-    this.camera = new THREE.PerspectiveCamera(.3, window.innerWidth / window.innerHeight, 1, 10000);
-    this.camera.position.z = 1000;
-
     let loader = new THREE.GLTFLoader();
     loader.load(URL, data => {
-      const material = new THREE.MeshBasicMaterial({color: 0xff0000, wireframe: true});
-      let geometry = data.scene.getObjectByName('Cube').geometry;
-      this.mesh = new THREE.Mesh(geometry, material);
-      this.scene.add(this.mesh);
+      this.camera = data.cameras[0];
+      this.scene = data.scene;
+
+			let ambient = new THREE.AmbientLight( 0x222222 );
+
+      this.scene.add( ambient );
+
+      let directionalLight = new THREE.DirectionalLight( 0xdddddd );
+			directionalLight.position.set( 0, 0, 1 ).normalize();
+
+      this.scene.add( directionalLight );
+
+			let spot1 = new THREE.SpotLight( 0xffffff, 1 );
+
+			spot1.position.set( 10, 20, 10 );
+			spot1.angle = 0.25;
+			spot1.distance = 1024;
+			spot1.penumbra = 0.75;
+
+			this.scene.add( spot1 );
     });
   }
 
@@ -45,11 +57,13 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   animate() {
     window.requestAnimationFrame(() => this.animate());
-    if (this.mesh) {
-      this.mesh.rotation.x += 0.01;
-      this.mesh.rotation.y += 0.02;
+    if (this.scene && this.camera) {
+      this.renderer.render(this.scene, this.camera);
     }
-    this.renderer.render(this.scene, this.camera);
+  }
+
+  getCamera(scene: any): any {
+
   }
 
   @HostListener('window:resize', ['$event'])
